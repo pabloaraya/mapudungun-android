@@ -1,0 +1,85 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.pabloaraya.mapudungun.SearchActivityFragment">
+
+    <android.support.v7.widget.CardView
+        xmlns:card_view="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/cardViewTranslate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FFF"
+        card_view:cardCornerRadius="0dp"
+        android:layout_gravity="right"
+        android:minHeight="100dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp">
+
+            <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/editTextTranslate"
+                android:textColor="#000"
+                android:textSize="23sp"
+                android:layout_centerInParent="true"
+                android:hint="Palabra en mapudungun" />
+
+        </RelativeLayout>
+
+    </android.support.v7.widget.CardView>
+
+    <android.support.v7.widget.CardView
+        xmlns:card_view="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/cardViewResult"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FFF"
+        card_view:cardCornerRadius="4dp"
+        android:layout_gravity="right"
+        android:minHeight="100dp"
+        android:layout_below="@+id/cardViewTranslate"
+        android:layout_marginLeft="@dimen/activity_horizontal_margin"
+        android:layout_marginRight="@dimen/activity_horizontal_margin"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:layout_marginBottom="@dimen/activity_vertical_margin"
+        android:visibility="invisible">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp">
+
+            <TextView android:text=""
+                android:id="@+id/textViewWordResult"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
+                android:textSize="25sp">
+
+            </TextView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="asdf"
+                android:id="@+id/textViewResult"
+                android:textColor="@android:color/black"
+                android:layout_below="@+id/textViewWordResult" />
+
+        </RelativeLayout>
+
+    </android.support.v7.widget.CardView>
+
+    <ProgressBar
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/progressBar"
+        android:layout_alignBottom="@+id/cardViewResult"
+        android:layout_centerHorizontal="true"
+        android:visibility="invisible" />
+
+</RelativeLayout>
