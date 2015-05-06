@@ -33,7 +33,7 @@ public class MainActivity extends ActionBarActivity {
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                /* Create an Intent that will start the Menu-Activity. */
+                //Create an Intent that will start the Menu-Activity.
                     Intent mainIntent = new Intent(MainActivity.this, SearchActivity.class);
                     MainActivity.this.startActivity(mainIntent);
                     MainActivity.this.finish();
