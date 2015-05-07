@@ -1,5 +1,6 @@
 package com.pabloaraya.mapudungun;
 
+import android.graphics.Typeface;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v7.widget.CardView;
@@ -34,8 +35,12 @@ public class SearchActivityFragment extends Fragment {
     protected TextView textViewResult;
     protected ImageView imageViewRefresh;
 
+    private Typeface robotoLight;
+
     // Empty constructor
     public SearchActivityFragment() {
+
+
     }
 
     @Override
@@ -44,6 +49,8 @@ public class SearchActivityFragment extends Fragment {
         // Inflate layout
         View v = inflater.inflate(R.layout.fragment_search, container, false);
 
+        robotoLight = Typeface.createFromAsset(getActivity().getAssets(), "Roboto-Light.ttf");
+
         // References to view elements
         editTextTranslate   = (EditText)v.findViewById(R.id.editTextTranslate);
         progressBar         = (ProgressBar)v.findViewById(R.id.progressBar);
@@ -51,6 +58,10 @@ public class SearchActivityFragment extends Fragment {
         textViewWordResult  = (TextView)v.findViewById(R.id.textViewWordResult);
         textViewResult      = (TextView)v.findViewById(R.id.textViewResult);
         imageViewRefresh    = (ImageView)v.findViewById(R.id.imageViewRefresh);
+
+        textViewWordResult.setTypeface(robotoLight);
+        textViewResult.setTypeface(robotoLight);
+        editTextTranslate.setTypeface(robotoLight);
 
         // Remove suggestions
         editTextTranslate.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
@@ -152,7 +163,7 @@ public class SearchActivityFragment extends Fragment {
         try {
 
             // Random index number
-            int indexRandom = randomInt(0, MainActivity.mapudungun.length());
+            int indexRandom = randomInt(0, MainActivity.mapudungun.length()-1);
 
             // Word object
             JSONObject word = MainActivity.mapudungun.getJSONObject(indexRandom);
