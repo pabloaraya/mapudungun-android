@@ -25,8 +25,44 @@
                 android:id="@+id/editTextTranslate"
                 android:textColor="#000"
                 android:textSize="23sp"
-                android:layout_centerInParent="true"
-                android:hint="Palabra en mapudungun" />
+                android:hint="Palabra en mapudungun"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true" />
+
+            <ImageView
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:id="@+id/imageViewChange"
+                android:src="@drawable/change"
+                android:layout_below="@+id/editTextTranslate"
+                android:layout_centerHorizontal="true"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="New Text"
+                android:id="@+id/textViewFromWord"
+                android:textColor="#000"
+                android:layout_below="@+id/editTextTranslate"
+                android:layout_toLeftOf="@+id/imageViewChange"
+                android:layout_toStartOf="@+id/imageViewChange"
+                android:layout_marginRight="16dp"
+                android:layout_marginTop="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="New Text"
+                android:id="@+id/textViewToWord"
+                android:textColor="#000"
+                android:layout_below="@+id/editTextTranslate"
+                android:layout_toRightOf="@+id/imageViewChange"
+                android:layout_toEndOf="@+id/imageViewChange"
+                android:layout_marginLeft="16dp"
+                android:layout_marginTop="8dp" />
 
         </RelativeLayout>
 
@@ -52,12 +88,22 @@
             android:layout_height="match_parent"
             android:padding="16dp">
 
-            <TextView android:text=""
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mapudungun → Español"
+                android:id="@+id/textViewOrientation"
+                android:textColor="#9E9E9E" />
+
+            <TextView
                 android:id="@+id/textViewWordResult"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@android:color/black"
-                android:textSize="30sp">
+                android:textSize="30sp"
+                android:layout_below="@+id/textViewOrientation"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true">
 
             </TextView>
 
@@ -69,16 +115,35 @@
                 android:layout_below="@+id/textViewWordResult"
                 android:textSize="20sp"
                 android:layout_marginTop="8dp"
-                android:layout_marginLeft="8dp" />
+                android:layout_marginBottom="16dp" />
 
             <ImageView
                 android:layout_width="35dp"
                 android:layout_height="35dp"
                 android:id="@+id/imageViewRefresh"
-                android:src="@drawable/repeat"
+                android:src="@drawable/restart"
                 android:layout_below="@+id/textViewResult"
                 android:layout_alignParentRight="true"
                 android:layout_alignParentEnd="true" />
+
+            <ImageView
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:id="@+id/imageViewFavorite"
+                android:src="@drawable/star_outline"
+                android:layout_alignTop="@+id/textViewOrientation"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
+                android:visibility="invisible" />
+
+            <ImageView
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:id="@+id/imageViewShare"
+                android:src="@drawable/share"
+                android:layout_below="@+id/textViewResult"
+                android:layout_alignLeft="@+id/textViewWordResult"
+                android:layout_alignStart="@+id/textViewResult" />
 
         </RelativeLayout>
 
