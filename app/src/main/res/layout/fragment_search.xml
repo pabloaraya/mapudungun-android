@@ -133,8 +133,7 @@
                 android:src="@drawable/star_outline"
                 android:layout_alignTop="@+id/textViewOrientation"
                 android:layout_alignParentRight="true"
-                android:layout_alignParentEnd="true"
-                android:visibility="invisible" />
+                android:layout_alignParentEnd="true" />
 
             <ImageView
                 android:layout_width="35dp"

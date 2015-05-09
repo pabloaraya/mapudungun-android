@@ -4,4 +4,10 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_search">SearchActivity</string>
+    <string name="word_in_spanish">Palabra en español</string>
+    <string name="word_in_mapudungun">Palabra en mapudungun</string>
+    <string name="spanish">Español</string>
+    <string name="mapudungun">Mapudungun</string>
+    <string name="spanish_to_mapudungun">Español → Mapudungun</string>
+    <string name="mapudungun_to_spanish">Mapudungun → Español</string>
 </resources>

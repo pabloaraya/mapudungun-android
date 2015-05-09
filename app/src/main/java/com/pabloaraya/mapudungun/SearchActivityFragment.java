@@ -4,14 +4,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
+import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v7.widget.CardView;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
@@ -46,7 +49,7 @@ public class SearchActivityFragment extends Fragment {
     // ImageView elements
     protected ImageView imageViewRefresh;
     protected ImageView imageViewShare;
-    //protected ImageView imageViewFavorite;
+    protected ImageView imageViewFavorite;
     protected ImageView imageViewChange;
 
     // Typeface elements
@@ -75,6 +78,8 @@ public class SearchActivityFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
+        setHasOptionsMenu(true);
+
         // Load shared preferences
         sharedPref = getActivity().getSharedPreferences(getString(R.string.app_name), Context.MODE_PRIVATE);
         editorSharedPref = sharedPref.edit();
@@ -101,7 +106,7 @@ public class SearchActivityFragment extends Fragment {
         // References to image view
         imageViewRefresh    = (ImageView)v.findViewById(R.id.imageViewRefresh);
         imageViewShare      = (ImageView)v.findViewById(R.id.imageViewShare);
-        //imageViewFavorite   = (ImageView)v.findViewById(R.id.imageViewFavorite);
+        imageViewFavorite   = (ImageView)v.findViewById(R.id.imageViewFavorite);
         imageViewChange     = (ImageView)v.findViewById(R.id.imageViewChange);
 
         // Set typefaces
@@ -115,29 +120,29 @@ public class SearchActivityFragment extends Fragment {
 
         if(sharedPref.contains(DEFAULT_TRANSLATE_ORIENTATION)){
             if(sharedPref.getString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_SPANISH).equals(TRANSLATE_FROM_SPANISH)){
-                textViewFromWord.setText("Español");
-                textViewToWord.setText("Mapudungun");
-                textViewOrientation.setText("Español → Mapudungun");
+                textViewFromWord.setText(R.string.spanish);
+                textViewToWord.setText(R.string.mapudungun);
+                textViewOrientation.setText(R.string.spanish_to_mapudungun);
 
-                editTextTranslate.setHint("Palabra en español");
-                //imageViewFavorite.setVisibility(View.INVISIBLE);
+                editTextTranslate.setHint(R.string.word_in_spanish);
+                imageViewFavorite.setVisibility(View.INVISIBLE);
                 imageViewRefresh.setVisibility(View.INVISIBLE);
             }else{
-                textViewFromWord.setText("Mapudungun");
-                textViewToWord.setText("Español");
-                textViewOrientation.setText("Mapudungun → Español");
+                textViewFromWord.setText(R.string.mapudungun);
+                textViewToWord.setText(R.string.spanish);
+                textViewOrientation.setText(R.string.mapudungun_to_spanish);
 
-                editTextTranslate.setHint("Palabra en mapudungun");
-                //imageViewFavorite.setVisibility(View.VISIBLE);
+                editTextTranslate.setHint(R.string.word_in_mapudungun);
+                imageViewFavorite.setVisibility(View.VISIBLE);
                 imageViewRefresh.setVisibility(View.VISIBLE);
             }
         }else{
-            textViewFromWord.setText("Español");
-            textViewToWord.setText("Mapudungun");
-            textViewOrientation.setText("Español → Mapudungun");
+            textViewFromWord.setText(R.string.spanish);
+            textViewToWord.setText(R.string.mapudungun);
+            textViewOrientation.setText(R.string.spanish_to_mapudungun);
 
-            editTextTranslate.setHint("Palabra en español");
-            //imageViewFavorite.setVisibility(View.INVISIBLE);
+            editTextTranslate.setHint(R.string.word_in_spanish);
+            imageViewFavorite.setVisibility(View.INVISIBLE);
             imageViewRefresh.setVisibility(View.INVISIBLE);
 
             editorSharedPref.putString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_SPANISH);
@@ -155,23 +160,22 @@ public class SearchActivityFragment extends Fragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
 
-                // Show loading progress
-                progressBar.setVisibility(View.VISIBLE);
+
             }
 
             @Override
-            public void afterTextChanged(Editable s) {
+            public void afterTextChanged(final Editable s) {
 
                 // Verify the length
                 if (s.toString().trim().length() > 0) {
 
-                    searchWord(s);
+                    new LoadTranslateResult().execute();
+
                 }else{
                     // Hide result card
                     cardViewResult.setVisibility(View.INVISIBLE);
                 }
-                // Hide the progress bar
-                progressBar.setVisibility(View.INVISIBLE);
+
             }
         });
 
@@ -181,39 +185,47 @@ public class SearchActivityFragment extends Fragment {
             public void onClick(View v) {
                 if(sharedPref.contains(DEFAULT_TRANSLATE_ORIENTATION)){
                     if(sharedPref.getString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_SPANISH).equals(TRANSLATE_FROM_SPANISH)){
-                        textViewFromWord.setText("Mapudungun");
-                        textViewToWord.setText("Español");
-                        textViewOrientation.setText("Mapudungun → Español");
+                        textViewFromWord.setText(R.string.mapudungun);
+                        textViewToWord.setText(R.string.spanish);
+                        textViewOrientation.setText(R.string.mapudungun_to_spanish);
 
-                        editTextTranslate.setHint("Palabra en mapudungun");
+                        editTextTranslate.setHint(R.string.word_in_mapudungun);
 
-                        //imageViewFavorite.setVisibility(View.VISIBLE);
+                        imageViewFavorite.setVisibility(View.VISIBLE);
                         imageViewRefresh.setVisibility(View.VISIBLE);
                         editorSharedPref.putString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_MAPUDUNGUN);
                     }else{
-                        textViewFromWord.setText("Español");
-                        textViewToWord.setText("Mapudungun");
-                        textViewOrientation.setText("Español → Mapudungun");
+                        textViewFromWord.setText(R.string.spanish);
+                        textViewToWord.setText(R.string.mapudungun);
+                        textViewOrientation.setText(R.string.spanish_to_mapudungun);
 
-                        editTextTranslate.setHint("Palabra en español");
+                        editTextTranslate.setHint(R.string.word_in_spanish);
 
-                        //imageViewFavorite.setVisibility(View.INVISIBLE);
+                        imageViewFavorite.setVisibility(View.INVISIBLE);
                         imageViewRefresh.setVisibility(View.INVISIBLE);
                         editorSharedPref.putString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_SPANISH);
                     }
                 }else{
-                    textViewFromWord.setText("Mapudungun");
-                    textViewToWord.setText("Español");
-                    textViewOrientation.setText("Mapudungun → Español");
+                    textViewFromWord.setText(R.string.mapudungun);
+                    textViewToWord.setText(R.string.spanish);
+                    textViewOrientation.setText(R.string.mapudungun_to_spanish);
 
-                    editTextTranslate.setHint("Palabra en mapudungun");
+                    editTextTranslate.setHint(R.string.word_in_mapudungun);
 
-                    //imageViewFavorite.setVisibility(View.VISIBLE);
+                    imageViewFavorite.setVisibility(View.VISIBLE);
                     imageViewRefresh.setVisibility(View.VISIBLE);
                     editorSharedPref.putString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_MAPUDUNGUN);
                 }
+
+                // Save changed
                 editorSharedPref.commit();
-                searchWord(editTextTranslate.getText());
+
+                // Verify...
+                if(editTextTranslate.getText().length() > 0) {
+                    new LoadTranslateResult().execute();
+                }else{
+                    cardViewResult.setVisibility(View.INVISIBLE);
+                }
             }
         });
 
@@ -233,112 +245,25 @@ public class SearchActivityFragment extends Fragment {
             public void onClick(View v) {
                 Intent sendIntent = new Intent();
                 sendIntent.setAction(Intent.ACTION_SEND);
-                sendIntent.putExtra(Intent.EXTRA_TEXT, "¿Sabías que " + wordSearched + " significa " + wordResulted + " en mapudungun?");
+                sendIntent.putExtra(Intent.EXTRA_TEXT,
+                        "¿Sabías que " + wordSearched + " significa " + wordResulted + " en mapudungun?");
                 sendIntent.setType("text/plain");
                 startActivity(sendIntent);
             }
         });
 
         // Listener button favorite
-        /*imageViewFavorite.setOnClickListener(new View.OnClickListener() {
+        imageViewFavorite.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 imageViewFavorite.setImageResource(R.drawable.star);
             }
-        });*/
+        });
 
         // Show the daily word
         refreshDailyWord(false);
 
         return v;
-    }
-
-    public void searchWord(Editable s){
-
-        // Array of results
-        JSONArray result = new JSONArray();
-
-        // Go over list of words
-        for (int i = 0; i < MainActivity.mapudungun.length(); i++) {
-
-            try {
-
-                // Create a JSONObject for each word
-                JSONObject word = MainActivity.mapudungun.getJSONObject(i);
-
-                if(sharedPref.contains(DEFAULT_TRANSLATE_ORIENTATION)){
-
-                    if(sharedPref.getString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_SPANISH).equals(TRANSLATE_FROM_SPANISH)){
-
-                        //
-                        JSONArray words = word.getJSONArray(word.keys().next());
-
-                        for(int y = 0; y < words.length(); y++){
-
-                            if(words.getString(y).toLowerCase().trim().matches("(?i).*" + s.toString().toLowerCase().trim()+".*")){
-
-                                result = words;
-
-                                // Upper case the first letter
-                                String wordCap = words.getString(y).substring(0, 1).toUpperCase() + words.getString(y).substring(1);
-
-                                // Show the word searched
-                                textViewWordResult.setText(wordCap);
-
-                                // Show the result of words
-                                textViewResult.setText(word.keys().next());
-
-                                wordSearched = words.getString(y);
-                                wordResulted = word.keys().next();
-
-                                break;
-                            }
-                        }
-                    }else {
-
-                        // Verify if exits the word in the "key"
-                        if (word.has(s.toString().toLowerCase().trim())) {
-
-                            // Array of words
-                            result = word.getJSONArray(s.toString().toLowerCase().trim());
-
-                            // Final string to show in the result
-                            String textResult = new String();
-
-                            // Concat all words
-                            for (int w = 0; w < result.length(); w++) {
-                                textResult = textResult.concat(result.getString(w)).trim().concat("\n");
-                            }
-
-                            // Upper case the first letter
-                            String wordCap = s.toString().trim().substring(0, 1).toUpperCase() + s.toString().trim().substring(1);
-
-                            // Show the word searched
-                            textViewWordResult.setText(wordCap);
-
-                            // Show the result of words
-                            textViewResult.setText(removeLastChar(textResult));
-
-                            wordSearched = result.getString(0);
-                            wordResulted = word.keys().next();
-                        }
-                    }
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-
-        // Verify if exists result
-        if (result.length() > 0) {
-
-            // Show result card
-            cardViewResult.setVisibility(View.VISIBLE);
-        } else {
-
-            // Hide result card
-            cardViewResult.setVisibility(View.INVISIBLE);
-        }
     }
 
     // Show the daily word
@@ -394,4 +319,131 @@ public class SearchActivityFragment extends Fragment {
         return str.substring(0,str.length()-1);
     }
 
+    private class LoadTranslateResult extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected void onPreExecute(){
+
+            // Show loading progress
+            progressBar.setVisibility(View.VISIBLE);
+        }
+        @Override
+        protected String doInBackground(String... params) {
+            getActivity().runOnUiThread(new Runnable() {
+                public void run() {
+
+                    String wordSearched = editTextTranslate.getText().toString().toLowerCase().trim();
+
+                    // Array of results
+                    JSONArray result = new JSONArray();
+
+                    // Go over list of words
+                    for (int i = 0; i < MainActivity.mapudungun.length(); i++) {
+
+                        try {
+
+                            // Create a JSONObject for each word
+                            JSONObject word = MainActivity.mapudungun.getJSONObject(i);
+
+                            if (sharedPref.contains(DEFAULT_TRANSLATE_ORIENTATION)) {
+
+                                if (sharedPref.getString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_SPANISH).equals(TRANSLATE_FROM_SPANISH)) {
+
+                                    //
+                                    JSONArray words = word.getJSONArray(word.keys().next());
+
+                                    for (int y = 0; y < words.length(); y++) {
+
+                                        if (words.getString(y).toLowerCase().trim().matches("(?i).*" + wordSearched + ".*")) {
+
+                                            result = words;
+
+                                            // Upper case the first letter
+                                            String wordCap = words.getString(y).substring(0, 1).toUpperCase() + words.getString(y).substring(1);
+
+                                            // Show the word searched
+                                            textViewWordResult.setText(wordCap);
+
+                                            // Show the result of words
+                                            textViewResult.setText(word.keys().next());
+
+                                            wordSearched = words.getString(y);
+                                            wordResulted = word.keys().next();
+
+                                            break;
+                                        }
+                                    }
+                                } else {
+
+                                    if (word.keys().next().matches("(?i).*" + wordSearched + ".*")) {
+
+                                        // Array of words
+                                        result = word.getJSONArray(word.keys().next());
+
+                                        // Final string to show in the result
+                                        String textResult = new String();
+
+                                        // Concat all words
+                                        for (int w = 0; w < result.length(); w++) {
+                                            textResult = textResult.concat(result.getString(w)).trim().concat("\n");
+                                        }
+
+                                        // Upper case the first letter
+                                        String wordCap = word.keys().next().substring(0, 1).toUpperCase() + word.keys().next().substring(1);
+
+                                        // Show the word searched
+                                        textViewWordResult.setText(wordCap);
+
+                                        // Show the result of words
+                                        textViewResult.setText(removeLastChar(textResult));
+
+                                        wordSearched = result.getString(0);
+                                        wordResulted = word.keys().next();
+
+                                        break;
+                                    }
+                                }
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    // Verify if exists result
+                    if (result.length() > 0) {
+
+                        // Show result card
+                        cardViewResult.setVisibility(View.VISIBLE);
+                    } else {
+
+                        // Hide result card
+                        cardViewResult.setVisibility(View.INVISIBLE);
+                    }
+                }
+
+            });
+            return null;
+        }
+        @Override
+        protected void onPostExecute(String result) {
+
+            // Hide progressbar
+            progressBar.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_search, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_favorites){
+
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 }
