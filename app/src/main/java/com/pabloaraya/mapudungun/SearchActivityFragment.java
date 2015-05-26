@@ -11,22 +11,32 @@ import android.support.v7.widget.CardView;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Random;
+import java.util.ArrayList;
 
 
 /**
@@ -38,6 +48,8 @@ public class SearchActivityFragment extends Fragment {
     protected EditText editTextTranslate;
     protected ProgressBar progressBar;
     protected CardView cardViewResult;
+    //protected LinearLayout layoutSuggestions;
+    protected ListView listViewSuggestions;
 
     // TextView elements
     protected TextView textViewOrientation;
@@ -45,6 +57,7 @@ public class SearchActivityFragment extends Fragment {
     protected TextView textViewResult;
     protected TextView textViewFromWord;
     protected TextView textViewToWord;
+    protected TextView textViewWhatYouSay;
 
     // ImageView elements
     protected ImageView imageViewRefresh;
@@ -64,6 +77,22 @@ public class SearchActivityFragment extends Fragment {
     private final static String DEFAULT_TRANSLATE_ORIENTATION = "TRANSLATE_FROM";
     private final static String TRANSLATE_FROM_SPANISH = "SPANISH";
     private final static String TRANSLATE_FROM_MAPUDUNGUN = "MAPUDUNGUN";
+    private final static String WORD_SEARCHED = "WORD_SEARCHED";
+    private final static String WORD_RESULTED = "WORD_RESULTED";
+    private final static String WORD_TO_SHARE = "WORD_TO_SHARE";
+    private final static String SUGGESTIONS_WORDS = "SUGGESTIONS_WORDS";
+    private final static String SPECIAL_CHART = "äëïöüáéíóú";
+
+    // Tracker statics values
+    private final static String TRACKER_BUTTON = "Button";
+    private final static String TRACKER_CLICK = "Click";
+    private final static String TRACKER_CHANGE_ORIENTATION = "ChangeOrientationButton";
+    private final static String TRACKER_REFRESH_ACTION = "RefreshActionButton";
+    private final static String TRACKER_SHARE_ACTION = "ShareActionButton";
+    private final static String TRACKER_FAVORITE_ACTION = "FavoriteActionButton";
+
+    // Analitycs instance
+    private Tracker tracker;
 
     // Aux vars
     private String wordSearched;
@@ -78,7 +107,11 @@ public class SearchActivityFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
-        setHasOptionsMenu(true);
+        // Action bar buttons
+        //setHasOptionsMenu(true);
+
+        // Tracker analytics instance
+        tracker = ((Mapudungun)getActivity().getApplication()).getTracker(Mapudungun.TrackerName.APP_TRACKER);
 
         // Load shared preferences
         sharedPref = getActivity().getSharedPreferences(getString(R.string.app_name), Context.MODE_PRIVATE);
@@ -95,6 +128,8 @@ public class SearchActivityFragment extends Fragment {
         editTextTranslate   = (EditText)v.findViewById(R.id.editTextTranslate);
         progressBar         = (ProgressBar)v.findViewById(R.id.progressBar);
         cardViewResult      = (CardView)v.findViewById(R.id.cardViewResult);
+        //layoutSuggestions   = (LinearLayout)v.findViewById(R.id.layoutSuggestions);
+        listViewSuggestions = (ListView)v.findViewById(R.id.listViewSuggestionsWord);
 
         // References to text view
         textViewOrientation = (TextView)v.findViewById(R.id.textViewOrientation);
@@ -102,6 +137,7 @@ public class SearchActivityFragment extends Fragment {
         textViewResult      = (TextView)v.findViewById(R.id.textViewResult);
         textViewFromWord    = (TextView)v.findViewById(R.id.textViewFromWord);
         textViewToWord      = (TextView)v.findViewById(R.id.textViewToWord);
+        textViewWhatYouSay  = (TextView)v.findViewById(R.id.textViewWhatYouSay);
 
         // References to image view
         imageViewRefresh    = (ImageView)v.findViewById(R.id.imageViewRefresh);
@@ -113,6 +149,7 @@ public class SearchActivityFragment extends Fragment {
         textViewOrientation.setTypeface(robotoRegular);
         textViewWordResult.setTypeface(robotoLight);
         textViewResult.setTypeface(robotoLight);
+        textViewWhatYouSay.setTypeface(robotoLight);
         editTextTranslate.setTypeface(robotoLight);
 
         // Remove suggestions
@@ -174,6 +211,9 @@ public class SearchActivityFragment extends Fragment {
                 }else{
                     // Hide result card
                     cardViewResult.setVisibility(View.INVISIBLE);
+
+                    // Hice suggestions card
+                    //layoutSuggestions.setVisibility(View.INVISIBLE);
                 }
 
             }
@@ -183,6 +223,20 @@ public class SearchActivityFragment extends Fragment {
         imageViewChange.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                // Rotate animation
+                Animation rotation = AnimationUtils.loadAnimation(getActivity(), R.anim.clockwise_rotation_180);
+                rotation.setRepeatCount(Animation.ABSOLUTE);
+                v.startAnimation(rotation);
+
+                // Alpha animation
+                AlphaAnimation alphaAnimation = new AlphaAnimation(0.2f, 1.0f);
+                alphaAnimation.setDuration(500);
+                alphaAnimation.setFillAfter(true);
+                alphaAnimation.setRepeatMode(Animation.REVERSE);
+                textViewFromWord.startAnimation(alphaAnimation);
+                textViewToWord.startAnimation(alphaAnimation);
+
                 if(sharedPref.contains(DEFAULT_TRANSLATE_ORIENTATION)){
                     if(sharedPref.getString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_SPANISH).equals(TRANSLATE_FROM_SPANISH)){
                         textViewFromWord.setText(R.string.mapudungun);
@@ -220,12 +274,22 @@ public class SearchActivityFragment extends Fragment {
                 // Save changed
                 editorSharedPref.commit();
 
+
+                //layoutSuggestions.setVisibility(View.INVISIBLE);
+
                 // Verify...
                 if(editTextTranslate.getText().length() > 0) {
                     new LoadTranslateResult().execute();
                 }else{
                     cardViewResult.setVisibility(View.INVISIBLE);
                 }
+
+                // Event tracker
+                tracker.send(new HitBuilders.EventBuilder()
+                        .setCategory(TRACKER_BUTTON)
+                        .setAction(TRACKER_CLICK)
+                        .setLabel(TRACKER_CHANGE_ORIENTATION)
+                        .build());
             }
         });
 
@@ -234,8 +298,20 @@ public class SearchActivityFragment extends Fragment {
             @Override
             public void onClick(View v) {
 
+                // Rotate animation
+                Animation rotation = AnimationUtils.loadAnimation(getActivity(), R.anim.clockwise_rotation_360);
+                rotation.setRepeatCount(Animation.ABSOLUTE);
+                v.startAnimation(rotation);
+
                 // Refresh the daily word
                 refreshDailyWord(true);
+
+                // Event tracker
+                tracker.send(new HitBuilders.EventBuilder()
+                        .setCategory(TRACKER_BUTTON)
+                        .setAction(TRACKER_CLICK)
+                        .setLabel(TRACKER_REFRESH_ACTION)
+                        .build());
             }
         });
 
@@ -245,9 +321,29 @@ public class SearchActivityFragment extends Fragment {
             public void onClick(View v) {
                 Intent sendIntent = new Intent();
                 sendIntent.setAction(Intent.ACTION_SEND);
-                sendIntent.putExtra(Intent.EXTRA_TEXT,
-                        "¿Sabías que " + wordSearched + " significa " + wordResulted + " en mapudungun?");
+
+                // Translate from Spanish
+                if (sharedPref.getString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_SPANISH)
+                        .equals(TRANSLATE_FROM_SPANISH)) {
+
+                    sendIntent.putExtra(Intent.EXTRA_TEXT,
+                            "¿Sabías que " + wordResulted + " significa " + wordSearched + " en mapudungun? https://goo.gl/p7w3JQ");
+
+                }else{
+
+                    sendIntent.putExtra(Intent.EXTRA_TEXT,
+                            "¿Sabías que " + wordSearched + " significa " + wordResulted + " en mapudungun? https://goo.gl/p7w3JQ");
+
+                }
                 sendIntent.setType("text/plain");
+
+                // Event tracker
+                tracker.send(new HitBuilders.EventBuilder()
+                        .setCategory(TRACKER_BUTTON)
+                        .setAction(TRACKER_CLICK)
+                        .setLabel(TRACKER_SHARE_ACTION)
+                        .build());
+
                 startActivity(sendIntent);
             }
         });
@@ -263,6 +359,13 @@ public class SearchActivityFragment extends Fragment {
         // Show the daily word
         refreshDailyWord(false);
 
+        // Event tracker
+        tracker.send(new HitBuilders.EventBuilder()
+                .setCategory(TRACKER_BUTTON)
+                .setAction(TRACKER_CLICK)
+                .setLabel(TRACKER_FAVORITE_ACTION)
+                .build());
+
         return v;
     }
 
@@ -271,7 +374,7 @@ public class SearchActivityFragment extends Fragment {
         try {
 
             // Random index number
-            int indexRandom = randomInt(0, MainActivity.mapudungun.length()-1);
+            int indexRandom = Util.randomInt(0, MainActivity.mapudungun.length() - 1);
 
             // Word object
             JSONObject word = MainActivity.mapudungun.getJSONObject(indexRandom);
@@ -291,7 +394,11 @@ public class SearchActivityFragment extends Fragment {
             String wordCap = word.keys().next().substring(0,1).toUpperCase() + word.keys().next().substring(1);
 
             textViewWordResult.setText(wordCap);
-            textViewResult.setText(removeLastChar(textResult));
+            textViewResult.setText(Util.removeLastChar(textResult));
+
+            // Save result
+            wordSearched = word.keys().next();
+            wordResulted = words.getString(0);
 
             if(changeEditText){
                 editTextTranslate.setText(wordCap);
@@ -302,24 +409,7 @@ public class SearchActivityFragment extends Fragment {
         }
     }
 
-    public static int randomInt(int min, int max) {
-
-        // Random object
-        Random rand = new Random();
-
-        // Set min and max
-        int randomNum = rand.nextInt((max - min) + 1) + min;
-
-        // Return number
-        return randomNum;
-    }
-
-    // Method to remove the last letter, using to remove the value \n
-    private static String removeLastChar(String str) {
-        return str.substring(0,str.length()-1);
-    }
-
-    private class LoadTranslateResult extends AsyncTask<String, Void, String> {
+    private class LoadTranslateResult extends AsyncTask<JSONObject, Void, JSONObject> {
 
         @Override
         protected void onPreExecute(){
@@ -328,104 +418,222 @@ public class SearchActivityFragment extends Fragment {
             progressBar.setVisibility(View.VISIBLE);
         }
         @Override
-        protected String doInBackground(String... params) {
-            getActivity().runOnUiThread(new Runnable() {
-                public void run() {
+        protected JSONObject doInBackground(JSONObject... params) {
 
-                    String wordSearched = editTextTranslate.getText().toString().toLowerCase().trim();
+            // Array of results
+            JSONObject result = new JSONObject();
 
-                    // Array of results
-                    JSONArray result = new JSONArray();
+            // Suggestions words
+            JSONArray suggestionsWord = new JSONArray();
 
-                    // Go over list of words
-                    for (int i = 0; i < MainActivity.mapudungun.length(); i++) {
+            String wordSearched = editTextTranslate.getText().toString().toLowerCase().trim();
 
-                        try {
+            try {
 
-                            // Create a JSONObject for each word
-                            JSONObject word = MainActivity.mapudungun.getJSONObject(i);
+                // Go over list of words
+                for (int i = 0; i < MainActivity.mapudungun.length(); i++) {
 
-                            if (sharedPref.contains(DEFAULT_TRANSLATE_ORIENTATION)) {
+                    // Create a JSONObject for each word
+                    JSONObject word = MainActivity.mapudungun.getJSONObject(i);
 
-                                if (sharedPref.getString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_SPANISH).equals(TRANSLATE_FROM_SPANISH)) {
+                    if (sharedPref.contains(DEFAULT_TRANSLATE_ORIENTATION)) {
 
-                                    //
-                                    JSONArray words = word.getJSONArray(word.keys().next());
+                        // Translate from spanish
+                        if (sharedPref.getString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_SPANISH)
+                                .equals(TRANSLATE_FROM_SPANISH)) {
 
-                                    for (int y = 0; y < words.length(); y++) {
+                            //
+                            JSONArray words = word.getJSONArray(word.keys().next());
 
-                                        if (words.getString(y).toLowerCase().trim().matches("(?i).*" + wordSearched + ".*")) {
+                            for (int y = 0; y < words.length(); y++) {
 
-                                            result = words;
+                                if (words.getString(y).matches("(?i).*" + wordSearched + ".*")) {
 
-                                            // Upper case the first letter
-                                            String wordCap = words.getString(y).substring(0, 1).toUpperCase() + words.getString(y).substring(1);
-
-                                            // Show the word searched
-                                            textViewWordResult.setText(wordCap);
-
-                                            // Show the result of words
-                                            textViewResult.setText(word.keys().next());
-
-                                            wordSearched = words.getString(y);
-                                            wordResulted = word.keys().next();
-
-                                            break;
-                                        }
-                                    }
-                                } else {
-
-                                    if (word.keys().next().matches("(?i).*" + wordSearched + ".*")) {
-
-                                        // Array of words
-                                        result = word.getJSONArray(word.keys().next());
-
-                                        // Final string to show in the result
-                                        String textResult = new String();
-
-                                        // Concat all words
-                                        for (int w = 0; w < result.length(); w++) {
-                                            textResult = textResult.concat(result.getString(w)).trim().concat("\n");
-                                        }
-
-                                        // Upper case the first letter
-                                        String wordCap = word.keys().next().substring(0, 1).toUpperCase() + word.keys().next().substring(1);
-
-                                        // Show the word searched
-                                        textViewWordResult.setText(wordCap);
-
-                                        // Show the result of words
-                                        textViewResult.setText(removeLastChar(textResult));
-
-                                        wordSearched = result.getString(0);
-                                        wordResulted = word.keys().next();
-
-                                        break;
-                                    }
+                                    // Add word to suggestions word
+                                    suggestionsWord.put(word);
                                 }
                             }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
+
+                        // Translate from mapudungun
+                        } else {
+
+                            if (word.keys().next().matches("(?i).*" + wordSearched + ".*")) {
+
+                                // Add suggestion words
+                                suggestionsWord.put(word);
+                            }
                         }
-                    }
-
-                    // Verify if exists result
-                    if (result.length() > 0) {
-
-                        // Show result card
-                        cardViewResult.setVisibility(View.VISIBLE);
-                    } else {
-
-                        // Hide result card
-                        cardViewResult.setVisibility(View.INVISIBLE);
                     }
                 }
 
-            });
-            return null;
+                if(suggestionsWord.length() > 0){
+
+                    for(int i = 0; i < suggestionsWord.length(); i++){
+
+                        String keySearchedWord = suggestionsWord.getJSONObject(i).keys().next();
+
+                        // Array of words
+                        JSONArray words = suggestionsWord.getJSONObject(i).getJSONArray(keySearchedWord);
+
+                        // Translate from Spanish
+                        if (sharedPref.getString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_SPANISH)
+                                .equals(TRANSLATE_FROM_SPANISH)) {
+
+                            for (int w = 0; w < words.length(); w++) {
+
+                                if(words.getString(w).equalsIgnoreCase(wordSearched)){
+
+                                    // Word searched
+                                    result.put(WORD_SEARCHED, Util.upperCaseFirstLetter(words.getString(w)));
+
+                                    // Word resulted
+                                    result.put(WORD_RESULTED, keySearchedWord);
+
+                                    // Word to share
+                                    result.put(WORD_TO_SHARE, keySearchedWord);
+
+                                    // Remove element from suggestion word
+                                    new Util().remove(i, suggestionsWord);
+
+                                    break;
+                                }
+                            }
+
+                        // Translate from Mapudungun
+                        } else {
+
+                            if(keySearchedWord.equalsIgnoreCase(wordSearched)){
+
+                                // Word searched
+                                result.put(WORD_SEARCHED, Util.upperCaseFirstLetter(keySearchedWord));
+
+                                // Final string to show in the result
+                                String textResult = new String();
+
+                                // Concat all words
+                                for (int w = 0; w < words.length(); w++) {
+                                    textResult = textResult.concat(words.getString(w)).trim().concat("\n");
+                                }
+
+                                // Word resulted
+                                result.put(WORD_RESULTED, Util.removeLastChar(textResult));
+
+                                // Word to share
+                                result.put(WORD_TO_SHARE, words.getString(0));
+
+                                // Remove element from suggestion word
+                                new Util().remove(i, suggestionsWord);
+
+                                break;
+                            }
+                        }
+                    }
+
+                    if(!result.has(WORD_SEARCHED)){
+
+                        // Translate from Spanish
+                        if (sharedPref.getString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_SPANISH)
+                                .equals(TRANSLATE_FROM_SPANISH)) {
+
+                            result.put(WORD_SEARCHED, suggestionsWord.getJSONObject(0).getJSONArray(suggestionsWord.getJSONObject(0).keys().next()).getString(0));
+
+                            result.put(WORD_RESULTED, suggestionsWord.getJSONObject(0).keys().next());
+
+                            result.put(WORD_TO_SHARE, suggestionsWord.getJSONObject(0).keys().next());
+
+                        }else{
+
+                            result.put(WORD_SEARCHED, suggestionsWord.getJSONObject(0).keys().next());
+
+                            // Final string to show in the result
+                            String textResult = new String();
+
+                            // Concat all words
+                            for (int w = 0; w < suggestionsWord.getJSONObject(0).getJSONArray(result.getString(WORD_SEARCHED)).length(); w++) {
+                                textResult = textResult.concat(suggestionsWord.getJSONObject(0).getJSONArray(result.getString(WORD_SEARCHED)).getString(w)).trim().concat("\n");
+                            }
+
+                            result.put(WORD_RESULTED, textResult);
+
+                            result.put(WORD_TO_SHARE, suggestionsWord.getJSONObject(0).getJSONArray(result.getString(WORD_SEARCHED)).getString(0));
+                        }
+                    }
+
+                    new Util().remove(0, suggestionsWord);
+
+                    // Add suggestions words to result
+                    result.put(SUGGESTIONS_WORDS, suggestionsWord);
+                }
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            return result;
         }
         @Override
-        protected void onPostExecute(String result) {
+        protected void onPostExecute(JSONObject result) {
+
+            // Verify if exists result
+            if (result.has(WORD_SEARCHED) && result.has(WORD_RESULTED)) {
+
+                // Event tracker
+                tracker.send(new HitBuilders.EventBuilder()
+                        .setCategory("Action")
+                        .setAction("Translate")
+                        .setLabel("TranslateEvent")
+                        .build());
+
+                try {
+
+                    // Update UI
+                    textViewWordResult.setText(result.getString(WORD_SEARCHED));
+                    textViewResult.setText(result.getString(WORD_RESULTED));
+
+                    // Save the current result word;
+                    wordSearched = result.getString(WORD_SEARCHED);
+                    wordResulted = result.getString(WORD_TO_SHARE);
+
+                    if(result.has(SUGGESTIONS_WORDS) && result.getJSONArray(SUGGESTIONS_WORDS).length() > 0) {
+
+                        /*ArrayList<String> words = new ArrayList<>();
+
+                        for(int i = 0; i < result.getJSONArray(SUGGESTIONS_WORDS).length(); i++){
+                            words.add(result.getJSONArray(SUGGESTIONS_WORDS).getString(i));
+                        }
+
+                        ArrayAdapter<String> wordAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1, words);
+                        listViewSuggestions.setAdapter(wordAdapter);
+
+                        if(result.getJSONArray(SUGGESTIONS_WORDS).length() == 1){
+
+                            Log.e("WORD", result.getJSONArray(SUGGESTIONS_WORDS).getString(0));
+                        }else {
+
+                            Log.e("COUNT", String.valueOf(result.getJSONArray(SUGGESTIONS_WORDS).length()));
+                        }*/
+
+                        //layoutSuggestions.setVisibility(View.VISIBLE);
+                    }else{
+                        //layoutSuggestions.setVisibility(View.INVISIBLE);
+                    }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                // Show result card
+                cardViewResult.setVisibility(View.VISIBLE);
+
+            // No results
+            } else {
+
+                // Hide result card
+                cardViewResult.setVisibility(View.INVISIBLE);
+
+                // Hide suggestions card
+                //layoutSuggestions.setVisibility(View.INVISIBLE);
+            }
 
             // Hide progressbar
             progressBar.setVisibility(View.INVISIBLE);

@@ -1,13 +1,13 @@
 <resources>
-    <string name="app_name">Mapudungun</string>
+<string name="app_name">Mapudungun</string>
 
-    <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
-    <string name="title_activity_search">SearchActivity</string>
-    <string name="word_in_spanish">Palabra en español</string>
-    <string name="word_in_mapudungun">Palabra en mapudungun</string>
-    <string name="spanish">Español</string>
-    <string name="mapudungun">Mapudungun</string>
-    <string name="spanish_to_mapudungun">Español → Mapudungun</string>
-    <string name="mapudungun_to_spanish">Mapudungun → Español</string>
+<string name="hello_world">Hello world!</string>
+<string name="action_settings">Settings</string>
+<string name="title_activity_search">SearchActivity</string>
+<string name="word_in_spanish">Word in spanish</string>
+<string name="word_in_mapudungun">Word in mapudungun</string>
+<string name="spanish">Spanish</string>
+<string name="mapudungun">Mapudungun</string>
+<string name="spanish_to_mapudungun">Spanish → Mapudungun</string>
+<string name="mapudungun_to_spanish">Mapudungun → Spanish</string>
 </resources>
