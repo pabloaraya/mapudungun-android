@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 22
-    buildToolsVersion "22.0.1"
+    compileSdkVersion 23
+    buildToolsVersion "23"
 
     defaultConfig {
         applicationId "com.pabloaraya.mapudungun"
         minSdkVersion 9
-        targetSdkVersion 22
+        targetSdkVersion 23
         versionCode 107
         versionName "1.0.7"
     }
@@ -24,9 +24,8 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:22.2.0'
-    compile 'com.android.support:support-v4:22.2.0'
-    compile 'com.android.support:cardview-v7:22.1.1'
-    compile 'com.google.android.gms:play-services:7.5.0'
-    wearApp project(':mapudungunwear')
+    compile 'com.android.support:appcompat-v7:23.0.0'
+    compile 'com.android.support:support-v4:23.0.0'
+    compile 'com.android.support:cardview-v7:23.0.0'
+    compile 'com.google.android.gms:play-services:7.8.0'
 }
