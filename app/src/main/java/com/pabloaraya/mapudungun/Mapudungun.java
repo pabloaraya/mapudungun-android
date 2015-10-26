@@ -7,11 +7,14 @@ import com.google.android.gms.analytics.Tracker;
 
 import java.util.HashMap;
 
+import retrofit.RestAdapter;
+
 /**
  * Created by pablo on 5/26/15.
  */
 public class Mapudungun extends Application {
 
+    /* Google Analytics Tracker */
     HashMap<TrackerName, Tracker> mTrackers = new HashMap<TrackerName, Tracker>();
 
     public synchronized Tracker getTracker(TrackerName trackerId) {
@@ -25,8 +28,6 @@ public class Mapudungun extends Application {
     }
 
     public enum TrackerName {
-        APP_TRACKER,
-        GLOBAL_TRACKER,
-        E_COMMERCE_TRACKER,
+        APP_TRACKER
     }
 }

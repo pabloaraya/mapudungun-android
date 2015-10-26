@@ -5,6 +5,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
+import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v7.widget.CardView;
@@ -37,6 +40,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+import retrofit.Callback;
+import retrofit.RetrofitError;
+import retrofit.client.Response;
 
 
 /**
@@ -46,10 +55,12 @@ public class SearchActivityFragment extends Fragment {
 
     // View elements
     protected EditText editTextTranslate;
+    protected TextInputLayout layoutTranslate;
     protected ProgressBar progressBar;
     protected CardView cardViewResult;
     //protected LinearLayout layoutSuggestions;
     protected ListView listViewSuggestions;
+    protected CoordinatorLayout snackBarNotification;
 
     // TextView elements
     protected TextView textViewOrientation;
@@ -64,10 +75,6 @@ public class SearchActivityFragment extends Fragment {
     protected ImageView imageViewShare;
     protected ImageView imageViewFavorite;
     protected ImageView imageViewChange;
-
-    // Typeface elements
-    private Typeface robotoLight;
-    private Typeface robotoRegular;
 
     // SharedPreferences element
     private SharedPreferences sharedPref;
@@ -101,7 +108,6 @@ public class SearchActivityFragment extends Fragment {
     // Empty constructor
     public SearchActivityFragment() {
 
-
     }
 
     @Override
@@ -121,15 +127,17 @@ public class SearchActivityFragment extends Fragment {
         View v = inflater.inflate(R.layout.fragment_search, container, false);
 
         // Instance typefaces from assets
-        robotoLight     = Typeface.createFromAsset(getActivity().getAssets(), "Roboto-Light.ttf");
-        robotoRegular   = Typeface.createFromAsset(getActivity().getAssets(), "Roboto-Regular.ttf");
+        Typeface robotoLight = Typeface.createFromAsset(getActivity().getAssets(), "Roboto-Light.ttf");
+        Typeface robotoRegular = Typeface.createFromAsset(getActivity().getAssets(), "Roboto-Regular.ttf");
 
         // References to view elements
         editTextTranslate   = (EditText)v.findViewById(R.id.editTextTranslate);
+        layoutTranslate     = (TextInputLayout)v.findViewById(R.id.layoutTextTranslate);
         progressBar         = (ProgressBar)v.findViewById(R.id.progressBar);
         cardViewResult      = (CardView)v.findViewById(R.id.cardViewResult);
         //layoutSuggestions   = (LinearLayout)v.findViewById(R.id.layoutSuggestions);
         listViewSuggestions = (ListView)v.findViewById(R.id.listViewSuggestionsWord);
+        snackBarNotification= (CoordinatorLayout)v.findViewById(R.id.snackbarNotification);
 
         // References to text view
         textViewOrientation = (TextView)v.findViewById(R.id.textViewOrientation);
@@ -151,40 +159,12 @@ public class SearchActivityFragment extends Fragment {
         textViewResult.setTypeface(robotoLight);
         textViewWhatYouSay.setTypeface(robotoLight);
         editTextTranslate.setTypeface(robotoLight);
+        layoutTranslate.setTypeface(robotoRegular);
 
         // Remove suggestions
         editTextTranslate.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 
-        if(sharedPref.contains(DEFAULT_TRANSLATE_ORIENTATION)){
-            if(sharedPref.getString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_SPANISH).equals(TRANSLATE_FROM_SPANISH)){
-                textViewFromWord.setText(R.string.spanish);
-                textViewToWord.setText(R.string.mapudungun);
-                textViewOrientation.setText(R.string.spanish_to_mapudungun);
-
-                editTextTranslate.setHint(R.string.word_in_spanish);
-                imageViewFavorite.setVisibility(View.INVISIBLE);
-                imageViewRefresh.setVisibility(View.INVISIBLE);
-            }else{
-                textViewFromWord.setText(R.string.mapudungun);
-                textViewToWord.setText(R.string.spanish);
-                textViewOrientation.setText(R.string.mapudungun_to_spanish);
-
-                editTextTranslate.setHint(R.string.word_in_mapudungun);
-                imageViewFavorite.setVisibility(View.VISIBLE);
-                imageViewRefresh.setVisibility(View.VISIBLE);
-            }
-        }else{
-            textViewFromWord.setText(R.string.spanish);
-            textViewToWord.setText(R.string.mapudungun);
-            textViewOrientation.setText(R.string.spanish_to_mapudungun);
-
-            editTextTranslate.setHint(R.string.word_in_spanish);
-            imageViewFavorite.setVisibility(View.INVISIBLE);
-            imageViewRefresh.setVisibility(View.INVISIBLE);
-
-            editorSharedPref.putString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_SPANISH);
-            editorSharedPref.commit();
-        }
+        initUI();
 
         // Listener to changes text to translate
         editTextTranslate.addTextChangedListener(new TextWatcher() {
@@ -206,7 +186,7 @@ public class SearchActivityFragment extends Fragment {
                 // Verify the length
                 if (s.toString().trim().length() > 0) {
 
-                    new LoadTranslateResult().execute();
+                    translateWord();
 
                 }else{
                     // Hide result card
@@ -243,7 +223,8 @@ public class SearchActivityFragment extends Fragment {
                         textViewToWord.setText(R.string.spanish);
                         textViewOrientation.setText(R.string.mapudungun_to_spanish);
 
-                        editTextTranslate.setHint(R.string.word_in_mapudungun);
+                        //editTextTranslate.setHint(R.string.word_in_mapudungun);
+                        layoutTranslate.setHint(getString(R.string.word_in_mapudungun));
 
                         imageViewFavorite.setVisibility(View.VISIBLE);
                         imageViewRefresh.setVisibility(View.VISIBLE);
@@ -253,7 +234,8 @@ public class SearchActivityFragment extends Fragment {
                         textViewToWord.setText(R.string.mapudungun);
                         textViewOrientation.setText(R.string.spanish_to_mapudungun);
 
-                        editTextTranslate.setHint(R.string.word_in_spanish);
+                        //editTextTranslate.setHint(R.string.word_in_spanish);
+                        layoutTranslate.setHint(getString(R.string.word_in_spanish));
 
                         imageViewFavorite.setVisibility(View.INVISIBLE);
                         imageViewRefresh.setVisibility(View.INVISIBLE);
@@ -264,7 +246,8 @@ public class SearchActivityFragment extends Fragment {
                     textViewToWord.setText(R.string.spanish);
                     textViewOrientation.setText(R.string.mapudungun_to_spanish);
 
-                    editTextTranslate.setHint(R.string.word_in_mapudungun);
+                    //editTextTranslate.setHint(R.string.word_in_mapudungun);
+                    layoutTranslate.setHint(getString(R.string.word_in_mapudungun));
 
                     imageViewFavorite.setVisibility(View.VISIBLE);
                     imageViewRefresh.setVisibility(View.VISIBLE);
@@ -272,14 +255,11 @@ public class SearchActivityFragment extends Fragment {
                 }
 
                 // Save changed
-                editorSharedPref.commit();
-
-
-                //layoutSuggestions.setVisibility(View.INVISIBLE);
+                editorSharedPref.apply();
 
                 // Verify...
                 if(editTextTranslate.getText().length() > 0) {
-                    new LoadTranslateResult().execute();
+                    translateWord();
                 }else{
                     cardViewResult.setVisibility(View.INVISIBLE);
                 }
@@ -369,6 +349,43 @@ public class SearchActivityFragment extends Fragment {
         return v;
     }
 
+    public void initUI(){
+
+        if(sharedPref.contains(DEFAULT_TRANSLATE_ORIENTATION)){
+            if(sharedPref.getString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_SPANISH).equals(TRANSLATE_FROM_SPANISH)){
+                textViewFromWord.setText(R.string.spanish);
+                textViewToWord.setText(R.string.mapudungun);
+                textViewOrientation.setText(R.string.spanish_to_mapudungun);
+
+                //editTextTranslate.setHint(R.string.word_in_spanish);
+                layoutTranslate.setHint(getString(R.string.word_in_spanish));
+                imageViewFavorite.setVisibility(View.INVISIBLE);
+                imageViewRefresh.setVisibility(View.INVISIBLE);
+            }else{
+                textViewFromWord.setText(R.string.mapudungun);
+                textViewToWord.setText(R.string.spanish);
+                textViewOrientation.setText(R.string.mapudungun_to_spanish);
+
+                //editTextTranslate.setHint(R.string.word_in_mapudungun);
+                layoutTranslate.setHint(getString(R.string.word_in_mapudungun));
+                imageViewFavorite.setVisibility(View.VISIBLE);
+                imageViewRefresh.setVisibility(View.VISIBLE);
+            }
+        }else{
+            textViewFromWord.setText(R.string.spanish);
+            textViewToWord.setText(R.string.mapudungun);
+            textViewOrientation.setText(R.string.spanish_to_mapudungun);
+
+            //editTextTranslate.setHint(R.string.word_in_spanish);
+            layoutTranslate.setHint(getString(R.string.word_in_spanish));
+            imageViewFavorite.setVisibility(View.INVISIBLE);
+            imageViewRefresh.setVisibility(View.INVISIBLE);
+
+            editorSharedPref.putString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_SPANISH);
+            editorSharedPref.apply();
+        }
+    }
+
     // Show the daily word
     public void refreshDailyWord(boolean changeEditText){
         try {
@@ -409,7 +426,79 @@ public class SearchActivityFragment extends Fragment {
         }
     }
 
-    private class LoadTranslateResult extends AsyncTask<JSONObject, Void, JSONObject> {
+    private void translateWord(){
+
+        String wordSearched = editTextTranslate.getText().toString().toLowerCase().trim();
+
+        Map<String, String> params = new HashMap<>();
+
+        if (sharedPref.contains(DEFAULT_TRANSLATE_ORIENTATION)) {
+
+            // Translate from spanish
+            if (sharedPref.getString(DEFAULT_TRANSLATE_ORIENTATION, TRANSLATE_FROM_SPANISH)
+                    .equals(TRANSLATE_FROM_SPANISH)) {
+                params.put("from", TRANSLATE_FROM_SPANISH.toLowerCase());
+                params.put("to", TRANSLATE_FROM_MAPUDUNGUN.toLowerCase());
+            }else{
+                params.put("from", TRANSLATE_FROM_MAPUDUNGUN.toLowerCase());
+                params.put("to", TRANSLATE_FROM_SPANISH.toLowerCase());
+            }
+        }
+        params.put("word", wordSearched);
+
+        Server.api().translate(params, new Callback<ResponseTranslate>() {
+            @Override
+            public void success(ResponseTranslate responseTranslate, Response response) {
+                if(responseTranslate.getStatus().equalsIgnoreCase("success")){
+
+                    String words = "";
+
+                    for(int i = 0; i < responseTranslate.getWords().size(); i++){
+                        words.concat(responseTranslate.getWords().get(i));
+                    }
+
+                    textViewWordResult.setText(editTextTranslate.getText().toString());
+                    textViewResult.setText(responseTranslate.getWords().get(0));
+                    cardViewResult.setVisibility(View.VISIBLE);
+                }else{
+                    cardViewResult.setVisibility(View.INVISIBLE);
+                }
+            }
+
+            @Override
+            public void failure(RetrofitError error) {
+
+                /* Verify internet connection */
+                if(error.isNetworkError()){
+                    Snackbar
+                            .make(snackBarNotification, R.string.error_no_internet, Snackbar.LENGTH_LONG)
+                            .setAction(R.string.button_retry, clickListenerRetry)
+                            .show();
+                    return;
+                }
+                try {
+                    if (error.getBody() != null) {
+                        ResponseTranslate translate = ((ResponseTranslate) error.getBody());
+                        Snackbar
+                                .make(snackBarNotification, translate.getMessage(), Snackbar.LENGTH_LONG)
+                                .setAction(R.string.button_retry, clickListenerRetry)
+                                .show();
+                    }
+                } catch (IllegalStateException e){
+
+                }
+            }
+        });
+    }
+
+    View.OnClickListener clickListenerRetry = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            translateWord();
+        }
+    };
+
+    /*private class LoadTranslateResult extends AsyncTask<JSONObject, Void, JSONObject> {
 
         @Override
         protected void onPreExecute(){
@@ -596,7 +685,7 @@ public class SearchActivityFragment extends Fragment {
 
                     if(result.has(SUGGESTIONS_WORDS) && result.getJSONArray(SUGGESTIONS_WORDS).length() > 0) {
 
-                        /*ArrayList<String> words = new ArrayList<>();
+                        //ArrayList<String> words = new ArrayList<>();
 
                         for(int i = 0; i < result.getJSONArray(SUGGESTIONS_WORDS).length(); i++){
                             words.add(result.getJSONArray(SUGGESTIONS_WORDS).getString(i));
@@ -611,7 +700,7 @@ public class SearchActivityFragment extends Fragment {
                         }else {
 
                             Log.e("COUNT", String.valueOf(result.getJSONArray(SUGGESTIONS_WORDS).length()));
-                        }*/
+                        //}
 
                         //layoutSuggestions.setVisibility(View.VISIBLE);
                     }else{
@@ -638,7 +727,7 @@ public class SearchActivityFragment extends Fragment {
             // Hide progressbar
             progressBar.setVisibility(View.INVISIBLE);
         }
-    }
+    }*/
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
